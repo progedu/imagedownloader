@@ -12,7 +12,8 @@ class DownloadFailException extends IOException
 
 class ImageFileDownloader(config: Config,
                           client: OkHttpClient,
-                          wnidWordMap: Map[String, String]
+                          wnidWordMap: Map[String, String],
+                          urlsFileLoader: ActorRef
                          ) extends Actor {
 
   val jpegMediaType = MediaType.parse("image/jpeg")
@@ -20,15 +21,21 @@ class ImageFileDownloader(config: Config,
 
   override def receive = {
 
-    case imageNetUrl: ImageNetUrl => {
-      originalSender = sender()
+    case DownloadImage => {
+      if(sender() != self) originalSender = sender()
+      urlsFileLoader ! LoadUrlsFile
+    }
 
+    case imageNetUrl: ImageNetUrl => {
       val request = new Request.Builder()
         .url(imageNetUrl.url)
         .build()
 
       client.newCall(request).enqueue(new Callback {
-        override def onFailure(call: Call, e: IOException): Unit = originalSender ! DownloadFailure(e, imageNetUrl)
+        override def onFailure(call: Call, e: IOException): Unit =  {
+          originalSender ! DownloadFailure(e, imageNetUrl)
+          downloadNext()
+        }
 
         override def onResponse(call: Call, response: Response): Unit = {
           if (response.isSuccessful
@@ -58,9 +65,14 @@ class ImageFileDownloader(config: Config,
             originalSender ! DownloadFailure(new DownloadFailException, imageNetUrl)
           }
           response.close()
+          downloadNext()
         }
       })
     }
+
+    case Finished => originalSender ! Finished
   }
+
+  private[this] def downloadNext(): Unit = self ! DownloadImage
 
 }
