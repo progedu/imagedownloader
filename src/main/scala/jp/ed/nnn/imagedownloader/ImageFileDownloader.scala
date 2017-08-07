@@ -38,10 +38,8 @@ class ImageFileDownloader(config: Config,
               imageNetUrl.wnid + "-" + wnidWordMap(imageNetUrl.wnid))
             dir.mkdir()
 
-            val downloadFile = File.createTempFile(
-              imageNetUrl.id + "_",
-              ".jpg",
-              dir)
+            val downloadFile = new File(dir, imageNetUrl.id + ".jpg")
+            if(!downloadFile.exists()) downloadFile.createNewFile()
 
             val tmpFilePath = Paths.get(downloadFile.getAbsolutePath)
             Try {
