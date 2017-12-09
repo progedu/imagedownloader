@@ -22,8 +22,7 @@ class Supervisor(config: Config) extends Actor {
         val strs = s.split("\t")
         (strs.head, strs.tail.mkString("\t"))
       }).toMap
-
-
+  
   val client: OkHttpClient = new OkHttpClient.Builder()
     .connectTimeout(1, TimeUnit.SECONDS)
     .writeTimeout(1, TimeUnit.SECONDS)
@@ -31,13 +30,9 @@ class Supervisor(config: Config) extends Actor {
     .build()
 
   val router: Router = {
+    val props = Props(new ImageFileDownloader(config, client, wnidWordMap))
     val downloaders = Vector.fill(config.numOfDownloader) {
-      ActorRefRoutee(context.actorOf(
-        Props(new ImageFileDownloader(
-          config,
-          client,
-          wnidWordMap
-        ))))
+      ActorRefRoutee(context.actorOf(props))
     }
     Router(RoundRobinRoutingLogic(), downloaders)
   }

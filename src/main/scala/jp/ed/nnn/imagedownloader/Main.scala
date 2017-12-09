@@ -9,7 +9,7 @@ object Main extends App {
   val wordsFilePath = "../../imagedownloader_texts/words.txt"
   val urlsFilePath = "../../imagedownloader_texts/fall11_urls.txt"
   val outputDirPath = "../../imagedownloader_download"
-  val numOfDownloader = 2000
+  val numOfDownloader = 20
   val config = Config(
     wordsFilePath,
     urlsFilePath,
