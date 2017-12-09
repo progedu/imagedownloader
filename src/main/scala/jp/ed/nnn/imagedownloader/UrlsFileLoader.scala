@@ -6,12 +6,11 @@ import scala.io.{Codec, Source}
 
 class UrlsFileLoader(config: Config) extends Actor {
 
-  override def receive = {
-
+  override def receive: Receive = {
     case LoadUrlsFile =>
       val urlsFileSource = Source.fromFile(config.urlsFilePath)(Codec.UTF8)
       val urlsIterator = urlsFileSource.getLines()
-      urlsIterator.foreach((line) => {
+      urlsIterator.foreach(line => {
         val strs = line.split("\t")
         val id = strs.head
         val url = strs.tail.mkString("\t")
@@ -21,4 +20,5 @@ class UrlsFileLoader(config: Config) extends Actor {
       })
       urlsFileSource.close()
   }
+
 }
