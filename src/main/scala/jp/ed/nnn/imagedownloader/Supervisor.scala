@@ -16,13 +16,14 @@ class Supervisor(config: Config) extends Actor {
   var fileLoadedUrlCount = 0
 
   val wordsFileSource: Source = Source.fromFile(config.wordsFilePath)
-  val wnidWordMap: Map[String, String] =
-    wordsFileSource.getLines()
-      .map(s => {
-        val strs = s.split("\t")
-        (strs.head, strs.tail.mkString("\t"))
-      }).toMap
-  
+  val wnidWordMap: Map[String, String] = wordsFileSource
+    .getLines()
+    .map { s =>
+      val Array(wnid, word) = s.split("\t")
+      wnid -> word
+    }
+    .toMap
+
   val client: OkHttpClient = new OkHttpClient.Builder()
     .connectTimeout(1, TimeUnit.SECONDS)
     .writeTimeout(1, TimeUnit.SECONDS)
