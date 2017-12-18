@@ -1,15 +1,14 @@
 package jp.ed.nnn.imagedownloader
 
-import akka.actor.{ActorSystem, Inbox, Props}
+import akka.actor.{ActorRef, ActorSystem, Inbox, Props}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object Main extends App {
-  // TODO please fix to your configuration
-  val wordsFilePath = "/Users/soichiro_yoshimura/Desktop/ImageUrls/words.txt"
-  val urlsFilePath = "/Users/soichiro_yoshimura/Desktop/ImageUrls/fall11_urls.txt"
-  val outputDirPath = "/Users/soichiro_yoshimura/Desktop/imagenet_download"
+  val wordsFilePath = "../../imagedownloader_texts/words.txt"
+  val urlsFilePath = "../../imagedownloader_texts/fall11_urls.txt"
+  val outputDirPath = "../../imagedownloader_download"
   val numOfDownloader = 2000
   val config = Config(
     wordsFilePath,
@@ -19,7 +18,7 @@ object Main extends App {
 
   val system = ActorSystem("imagedownloader")
   val inbox = Inbox.create(system)
-  implicit val sender = inbox.getRef()
+  implicit val sender: ActorRef = inbox.getRef()
 
   val supervisor = system.actorOf(Props(new Supervisor(config)))
   supervisor ! Start
