@@ -1,32 +1,22 @@
 package jp.ed.nnn.imagedownloader
 
-import akka.actor.Actor
+import akka.NotUsed
+import akka.stream.scaladsl._
 
-import scala.io.{Codec, Source}
+class UrlsFileLoader(implicit config: Config) {
 
-class UrlsFileLoader(config: Config) extends Actor {
-
-  val urlsFileSource = Source.fromFile(config.urlsFilePath)(Codec.UTF8)
-  val urlsIterator = urlsFileSource.getLines()
-
-  override def receive = {
-
-    case LoadUrlsFile =>
-      if (urlsIterator.hasNext) {
-        val line = urlsIterator.next()
-        val strs = line.split("\t")
-        val id = strs.head
-        val url = strs.tail.mkString("\t")
-        val wnid = id.split("_").head
-        val imageNetUrl = ImageNetUrl(id, url, wnid)
-        sender() ! imageNetUrl
-      } else {
-        sender() ! Finished
-      }
+  def getFlow: Flow[String, ImageNetUrl, NotUsed] = {
+    Flow[String].map( s => {
+      val strs = s.split("\t")
+      val id = strs.head
+      val url = strs.tail.mkString("\t")
+      val wnid = id.split("_").head
+      ImageNetUrl(id, url, wnid)
+    })
   }
 
-  override def postStop(): Unit =  {
-    super.postStop()
-    urlsFileSource.close()
-  }
+}
+
+object UrlsFileLoader {
+  def apply()(implicit config: Config): UrlsFileLoader = new UrlsFileLoader
 }

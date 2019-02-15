@@ -1,30 +1,47 @@
 package jp.ed.nnn.imagedownloader
 
-import akka.actor.{ActorSystem, Inbox, Props}
+import akka.actor.ActorSystem
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import akka.stream._
+import akka.stream.scaladsl._
 
 object Main extends App {
   // TODO please fix to your configuration
-  val wordsFilePath = "/Users/soichiro_yoshimura/Desktop/ImageUrls/words.txt"
-  val urlsFilePath = "/Users/soichiro_yoshimura/Desktop/ImageUrls/fall11_urls.txt"
-  val outputDirPath = "/Users/soichiro_yoshimura/Desktop/imagenet_download"
-  val numOfDownloader = 2000
-  val config = Config(
+  val wordsFilePath = "/Users/kokuboyuuki/workspace/imagedawnloaderUtils/util/words.txt"
+  val urlsFilePath = "/Users/kokuboyuuki/workspace/imagedawnloaderUtils/util/fall11_urls.txt"
+  val outputDirPath = "/Users/kokuboyuuki/workspace/imagedawnloaderUtils/images"
+  val numOfDownloader = 20
+  implicit val config: Config = Config(
     wordsFilePath,
     urlsFilePath,
     outputDirPath,
     numOfDownloader)
 
-  val system = ActorSystem("imagedownloader")
-  val inbox = Inbox.create(system)
-  implicit val sender = inbox.getRef()
+  implicit val system = ActorSystem("imagedownloader")
+  implicit val materializer = ActorMaterializer()
+  implicit val ec = system.dispatcher
 
-  val supervisor = system.actorOf(Props(new Supervisor(config)))
-  supervisor ! Start
+  val supervisor = Supervisor()
+  val fileLoader = UrlsFileLoader().getFlow
+  val downloader = ImageFileDownloader(supervisor).getFlow
+  val counter = DownloadCounter().getFlow
 
-  inbox.receive(100.days)
-  Await.ready(system.terminate(), Duration.Inf)
-  println("Finished.")
+  val source = Source.fromIterator(() => supervisor.urlsFilePath)
+  val sink = Sink.onComplete(_ => system.terminate())
+
+  val parallelism = Flow.fromGraph(GraphDSL.create() {implicit builder =>
+    import GraphDSL.Implicits._
+    val balance = builder.add(Balance[ImageNetUrl](config.numOfDownloader))
+    val merge = builder.add(Merge[DownloadResult](config.numOfDownloader))
+
+    for (i <- 1 to config.numOfDownloader) {
+      balance ~> downloader.async ~> merge
+    }
+
+    FlowShape(balance.in, merge.out)
+  })
+
+  val runnable = source via fileLoader via parallelism via counter to sink
+  runnable.run()
+
 }
