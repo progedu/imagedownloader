@@ -7,9 +7,9 @@ import akka.stream.scaladsl._
 
 object Main extends App {
   // TODO please fix to your configuration
-  val wordsFilePath = "/Users/kokuboyuuki/workspace/imagedawnloaderUtils/util/words.txt"
-  val urlsFilePath = "/Users/kokuboyuuki/workspace/imagedawnloaderUtils/util/fall11_urls.txt"
-  val outputDirPath = "/Users/kokuboyuuki/workspace/imagedawnloaderUtils/images"
+  val wordsFilePath = "/.../.../workspace/imagedawnloaderUtils/util/words.txt"
+  val urlsFilePath = "/.../.../workspace/imagedawnloaderUtils/util/fall11_urls.txt"
+  val outputDirPath = "/.../.../workspace/imagedawnloaderUtils/images"
   val numOfDownloader = 20
   implicit val config: Config = Config(
     wordsFilePath,
